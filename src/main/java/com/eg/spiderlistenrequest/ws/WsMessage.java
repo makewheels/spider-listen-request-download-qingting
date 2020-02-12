@@ -9,4 +9,5 @@ import lombok.Data;
 public class WsMessage {
     private String cmd;
     private String message;
+    private String tabUrl;
 }

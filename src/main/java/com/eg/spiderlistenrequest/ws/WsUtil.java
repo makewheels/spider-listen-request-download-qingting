@@ -1,6 +1,8 @@
 package com.eg.spiderlistenrequest.ws;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.eg.spiderlistenrequest.spider.Spider;
 
 /**
  * @time 2020-02-12 16:51
@@ -17,22 +19,22 @@ public class WsUtil {
     public static void onReceive(String json) {
         WsMessage wsMessage = JSON.parseObject(json, WsMessage.class);
         String cmd = wsMessage.getCmd();
-        String message = wsMessage.getMessage();
         if (cmd.equals("cmd")) {
-            handleCmd(message);
+            handleCmd(wsMessage);
         } else if (cmd.equals("url")) {
-            handleUrl(message);
+            handleUrl(wsMessage);
         }
     }
 
     /**
      * 处理cmd
      *
-     * @param cmd
+     * @param wsMessage
      */
-    private static void handleCmd(String cmd) {
+    private static void handleCmd(WsMessage wsMessage) {
+        String message = wsMessage.getMessage();
         //插件已就绪
-        if (cmd.equals("ready")) {
+        if (message.equals("ready")) {
             extensionState = STATE_READY;
         }
     }
@@ -40,11 +42,9 @@ public class WsUtil {
     /**
      * 处理url
      *
-     * @param url
+     * @param wsMessage
      */
-    private static void handleUrl(String url) {
-        if (url.startsWith("https://od.sign.qingting.fm/")) {
-            System.out.println(url);
-        }
+    private static void handleUrl(WsMessage wsMessage) {
+        Spider.onReceiveUrlCallback(wsMessage);
     }
 }
