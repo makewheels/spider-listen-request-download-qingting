@@ -1,76 +1,149 @@
 package com.eg.spiderlistenrequest;
 
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
+import org.jboss.logging.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.websocket.*;
 import javax.websocket.server.PathParam;
-import java.util.concurrent.ConcurrentHashMap;
+import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 
 /**
  * @time 2020-02-12 15:40
  */
+@ServerEndpoint("/{userId}")
+@Component
 public class WebSocket {
-    private Session session;//与某个客户端的连接对话，需要通过它来给客户端发送消息
-    private String name;//标识当前连接客户端的用户名
-    //用于存所有的连接服务的客户端，这个对象存储是安全的
-    private static ConcurrentHashMap<String, WebSocket> webSocketSet = new ConcurrentHashMap<>();
+    static Logger log = Logger.getLogger(WebSocket.class);
+    // 静态变量，用来记录当前在线连接数。应该把它设计成线程安全的。
+    private static int onlineCount = 0;
+    // concurrent包的线程安全Set，用来存放每个客户端对应的WebSocket对象。
+    private static CopyOnWriteArraySet<WebSocket> webSocketSet = new CopyOnWriteArraySet<WebSocket>();
+    // 与某个客户端的连接会话，需要通过它来给客户端发送数据
+    private Session session;
+    /**
+     * 接收userId
+     */
+    private String userId = "";
+    private static Map<String, WebSocket> webSocketMap = new HashMap<>();
 
+    /**
+     * 连接建立成功调用的方法
+     */
     @OnOpen
-    public void OnOpen(Session session, @PathParam(value = "name") String name) {
+    public void onOpen(Session session, @PathParam("userId") String userId) {
         this.session = session;
-        this.name = name;
-        // name是用来表示唯一客户端，如果需要指定发送，需要指定发送通过name来区分
-        webSocketSet.put(name, this);
-        System.out.println("[WebSocket] 连接成功，当前连接人数为：=" + webSocketSet.size());
-    }
-
-    @OnClose
-    public void OnClose() {
-        webSocketSet.remove(this.name);
-        System.out.println("[WebSocket] 退出成功，当前连接人数为：=" + webSocketSet.size());
-    }
-
-    @OnMessage
-    public void OnMessage(String message) {
-        System.out.println("[WebSocket] 收到消息：" + message);
-        //判断是否需要指定发送，具体规则自定义
-        if (message.indexOf("TOUSER") == 0) {
-            String name = message.substring(message.indexOf("TOUSER") + 6, message.indexOf(";"));
-            AppointSending(name, message.substring(message.indexOf(";") + 1, message.length()));
+        this.userId = userId;
+        webSocketSet.add(this);
+        if (webSocketMap.containsKey(userId)) {
+            webSocketMap.remove(userId);
+            webSocketMap.put(userId, this);
         } else {
-            GroupSending(message);
+            webSocketMap.put(userId, this);// 加入set中
+            addOnlineCount();// 在线数加1
         }
-
+        log.info(userId + "加入");
+        log.info("当前在线人数为：" + getOnlineCount());
+        try {
+            sendMessage("欢迎" + userId + "加入");
+        } catch (IOException e) {
+            System.out.println("IO异常");
+        }
     }
 
     /**
-     * 群发
-     *
-     * @param message
+     * 连接关闭调用的方法
      */
-    public void GroupSending(String message) {
-        for (String name : webSocketSet.keySet()) {
+    @OnClose
+    public void onClose() {
+        webSocketSet.remove(this); // 从set中删除
+        subOnlineCount(); // 在线数减1
+        System.out.println("有一连接关闭！当前在线人数为" + getOnlineCount());
+    }
+
+    /**
+     * 收到客户端消息后调用的方法
+     *
+     * @param message 客户端发送过来的消息
+     */
+    @OnMessage
+    public void onMessage(String message, Session session) {
+        message = "来自" + userId + "的消息:" + message;
+        log.info("onMessage:" + message);
+        // 群发消息
+        for (WebSocket item : webSocketSet) {
             try {
-                webSocketSet.get(name).session.getBasicRemote().sendText(message);
-            } catch (Exception e) {
+                item.sendMessage(message);
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
     /**
-     * 指定发送
-     *
-     * @param name
-     * @param message
+     * 发生错误时调用
      */
-    public void AppointSending(String name, String message) {
-        try {
-            webSocketSet.get(name).session.getBasicRemote().sendText(message);
-        } catch (Exception e) {
-            e.printStackTrace();
+    @OnError
+    public void onError(Session session, Throwable error) {
+        System.out.println("发生错误");
+        error.printStackTrace();
+    }
+
+    public void sendMessage(String message) throws IOException {
+        this.session.getBasicRemote().sendText(message);
+        // this.session.getAsyncRemote().sendText(message);
+    }
+
+    /**
+     * 群发自定义消息
+     */
+    public static void sendInfo(String message) throws IOException {
+        for (WebSocket item : webSocketSet) {
+            try {
+                item.sendMessage(message);
+            } catch (IOException e) {
+                continue;
+            }
         }
+    }
+
+    /**
+     * 发送自定义消息
+     * 按userid发送消息
+     */
+    public static void sendInfo(String message, @PathParam("userId") String userId) throws IOException {
+        log.info("发送消息到：" + userId + "，报文：" + message);
+        if (webSocketMap.containsKey(userId)) {
+            webSocketMap.get(userId).sendMessage(message);
+        } else {
+            log.error("用户" + userId + ",不在线！");
+        }
+    }
+
+    /**
+     * 获取在线客户端数量
+     *
+     * @return
+     */
+    public static synchronized int getOnlineCount() {
+        return onlineCount;
+    }
+
+    /**
+     * 添加线上链接的客户端数量
+     */
+    public static synchronized void addOnlineCount() {
+        WebSocket.onlineCount++;
+    }
+
+    /**
+     * 客户端下载是调用将在线数量减1
+     */
+    public static synchronized void subOnlineCount() {
+        WebSocket.onlineCount--;
     }
 }
