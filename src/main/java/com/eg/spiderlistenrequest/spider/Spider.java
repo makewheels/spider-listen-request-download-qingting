@@ -1,8 +1,16 @@
 package com.eg.spiderlistenrequest.spider;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.eg.spiderlistenrequest.spider.playlist.Data;
+import com.eg.spiderlistenrequest.spider.playlist.ListRespone;
+import com.eg.spiderlistenrequest.spider.playlist.Programs;
+import com.eg.spiderlistenrequest.util.Constants;
+import com.eg.spiderlistenrequest.util.HttpUtil;
 import com.eg.spiderlistenrequest.ws.WsMessage;
 import com.eg.spiderlistenrequest.ws.WsUtil;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -10,6 +18,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,15 +68,32 @@ public class Spider {
      * 初始化任务列表
      */
     private static void initMissionList() {
-        Mission mission = new Mission();
-        mission.setName("【魏武挥鞭】01大江东去");
-        mission.setPageUrl("https://www.qingting.fm/channels/237072/programs/8397875/");
-        missionList.add(mission);
+        String channelJson = HttpUtil.get("https://i.qingting.fm/capi/v3/channel/"
+                + Constants.CHANNEL_ID + "?user_id=null");
+        JSONObject channelData = JSONObject.parseObject(channelJson).getJSONObject("data");
+        String v = channelData.getString("v");
+        Constants.CHANNEL_TITLE = channelData.getString("title");
+        int curpage = 1;
+        int total;
+        do {
+            String listJson = HttpUtil.get("https://i.qingting.fm/capi/channel/" + Constants.CHANNEL_ID
+                    + "/programs/" + v + "?curpage=" + curpage + "&pagesize=30&order=asc");
+            curpage++;
+            ListRespone listRespone = JSON.parseObject(listJson, ListRespone.class);
+            Data data = listRespone.getData();
+            total = data.getTotal();
+            List<Programs> programs = data.getPrograms();
+            for (Programs program : programs) {
+                String filename = (program.getSequence() + 1) + program.getTitle();
+                String pageUrl = "https://www.qingting.fm/channels/" + Constants.CHANNEL_ID + "/programs/"
+                        + program.getId() + "/";
+                Mission mission = new Mission();
+                mission.setName(filename);
+                mission.setPageUrl(pageUrl);
+                missionList.add(mission);
+            }
+        } while (CollectionUtils.isNotEmpty(missionList) && missionList.size() < total);
 
-        Mission mission1 = new Mission();
-        mission1.setName("【魏武挥鞭】02真假曹操");
-        mission1.setPageUrl("https://www.qingting.fm/channels/237072/programs/8397879/");
-        missionList.add(mission1);
     }
 
     /**
@@ -107,6 +134,8 @@ public class Spider {
         }
         //打开网页
         driver.get(mission.getPageUrl());
+        //这块可能会出现广告，先刷新一下
+        driver.navigate().refresh();
         listening = true;
         //点击播放按钮
         WebElement playButton = driver.findElement(By.xpath("//*[@id=\"app\"]/div/div[2]/div[2]/div[1]/div[1]/div[2]/button[1]"));
@@ -125,8 +154,8 @@ public class Spider {
             return;
         }
         String eachUrl = wsMessage.getMessage();
-        if (eachUrl.startsWith("https://audio.qingting.fm") == false) {
-//        if (eachUrl.startsWith("https://od.sign.qingting.fm/") == false) {
+//        if (eachUrl.startsWith("https://audio.qingting.fm") == false) {
+        if (eachUrl.startsWith("https://od.sign.qingting.fm/") == false) {
             return;
         }
         //遍历任务列表，找到这个任务
@@ -140,6 +169,18 @@ public class Spider {
                 } else {
                     mission.setDownloadUrl(eachUrl);
                     //开始下载
+                    File file = new File(Constants.DOWNLOAD_LOCATION + File.separator + Constants.CHANNEL_TITLE,
+                            mission.getName() + "." + mission.getFormat());
+                    try {
+                        FileUtils.copyURLToFile(new URL(mission.getDownloadUrl()), file);
+                    } catch (IOException e) {
+                        try {
+                            FileUtils.copyURLToFile(new URL(mission.getDownloadUrl()), file);
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                        e.printStackTrace();
+                    }
                     System.out.println(mission.getName());
                     System.out.println(eachUrl);
                     try {
