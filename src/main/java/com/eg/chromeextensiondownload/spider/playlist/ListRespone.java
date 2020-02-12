@@ -1,7 +1,7 @@
 /**
   * Copyright 2020 bejson.com 
   */
-package com.eg.spiderlistenrequest.spider.playlist;
+package com.eg.chromeextensiondownload.spider.playlist;
 
 /**
  * Auto-generated: 2020-02-12 23:22:37

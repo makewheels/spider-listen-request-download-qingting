@@ -1,9 +1,8 @@
-package com.eg.spiderlistenrequest.ws;
+package com.eg.chromeextensiondownload.ws;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
 @Configuration

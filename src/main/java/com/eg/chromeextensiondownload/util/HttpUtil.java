@@ -1,4 +1,4 @@
-package com.eg.spiderlistenrequest.util;
+package com.eg.chromeextensiondownload.util;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;

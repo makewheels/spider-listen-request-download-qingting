@@ -1,6 +1,6 @@
-package com.eg.spiderlistenrequest;
+package com.eg.chromeextensiondownload;
 
-import com.eg.spiderlistenrequest.spider.Spider;
+import com.eg.chromeextensiondownload.spider.Spider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

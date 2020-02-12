@@ -1,8 +1,7 @@
-package com.eg.spiderlistenrequest.ws;
+package com.eg.chromeextensiondownload.ws;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.eg.spiderlistenrequest.spider.Spider;
+import com.eg.chromeextensiondownload.spider.Spider;
 
 /**
  * @time 2020-02-12 16:51

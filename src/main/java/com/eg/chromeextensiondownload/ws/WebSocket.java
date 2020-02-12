@@ -1,4 +1,4 @@
-package com.eg.spiderlistenrequest.ws;
+package com.eg.chromeextensiondownload.ws;
 
 import org.jboss.logging.Logger;
 import org.springframework.stereotype.Component;

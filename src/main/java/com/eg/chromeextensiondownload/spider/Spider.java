@@ -1,14 +1,14 @@
-package com.eg.spiderlistenrequest.spider;
+package com.eg.chromeextensiondownload.spider;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.eg.spiderlistenrequest.spider.playlist.Data;
-import com.eg.spiderlistenrequest.spider.playlist.ListRespone;
-import com.eg.spiderlistenrequest.spider.playlist.Programs;
-import com.eg.spiderlistenrequest.util.Constants;
-import com.eg.spiderlistenrequest.util.HttpUtil;
-import com.eg.spiderlistenrequest.ws.WsMessage;
-import com.eg.spiderlistenrequest.ws.WsUtil;
+import com.eg.chromeextensiondownload.spider.playlist.Data;
+import com.eg.chromeextensiondownload.spider.playlist.ListRespone;
+import com.eg.chromeextensiondownload.spider.playlist.Programs;
+import com.eg.chromeextensiondownload.util.Constants;
+import com.eg.chromeextensiondownload.util.HttpUtil;
+import com.eg.chromeextensiondownload.ws.WsMessage;
+import com.eg.chromeextensiondownload.ws.WsUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
@@ -84,7 +84,12 @@ public class Spider {
             total = data.getTotal();
             List<Programs> programs = data.getPrograms();
             for (Programs program : programs) {
-                String filename = (program.getSequence() + 1) + program.getTitle();
+                int index = program.getSequence() + 1;
+                String zero = index + "";
+                if (index <= 9) {
+                    zero = "0" + index;
+                }
+                String filename = zero + program.getTitle();
                 String pageUrl = "https://www.qingting.fm/channels/" + Constants.CHANNEL_ID + "/programs/"
                         + program.getId() + "/";
                 Mission mission = new Mission();
@@ -138,6 +143,7 @@ public class Spider {
         listening = true;
         //点击播放按钮
         WebElement playButton = driver.findElement(By.xpath("//*[@id=\"app\"]/div/div[2]/div[2]/div[1]/div[1]/div[2]/button[1]"));
+        playButton.click();
         playButton.click();
         playButton.click();
     }

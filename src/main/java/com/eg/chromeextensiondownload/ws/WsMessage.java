@@ -1,4 +1,4 @@
-package com.eg.spiderlistenrequest.ws;
+package com.eg.chromeextensiondownload.ws;
 
 import lombok.Data;
 
