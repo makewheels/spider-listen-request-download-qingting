@@ -1,4 +1,4 @@
-package com.eg.spiderlistenrequest;
+package com.eg.spiderlistenrequest.ws;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;

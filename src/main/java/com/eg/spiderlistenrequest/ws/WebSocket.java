@@ -1,4 +1,4 @@
-package com.eg.spiderlistenrequest;
+package com.eg.spiderlistenrequest.ws;
 
 import org.jboss.logging.Logger;
 import org.springframework.stereotype.Component;
@@ -11,14 +11,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-
 /**
  * @time 2020-02-12 15:40
  */
 @ServerEndpoint("/{userId}")
 @Component
 public class WebSocket {
-    static Logger log = Logger.getLogger(WebSocket.class);
+    private static Logger log = Logger.getLogger(WebSocket.class);
     // 静态变量，用来记录当前在线连接数。应该把它设计成线程安全的。
     private static int onlineCount = 0;
     // concurrent包的线程安全Set，用来存放每个客户端对应的WebSocket对象。
@@ -43,16 +42,11 @@ public class WebSocket {
             webSocketMap.remove(userId);
             webSocketMap.put(userId, this);
         } else {
-            webSocketMap.put(userId, this);// 加入set中
-            addOnlineCount();// 在线数加1
+            webSocketMap.put(userId, this);
+            addOnlineCount();
         }
         log.info(userId + "加入");
         log.info("当前在线人数为：" + getOnlineCount());
-        try {
-            sendMessage("欢迎" + userId + "加入");
-        } catch (IOException e) {
-            System.out.println("IO异常");
-        }
     }
 
     /**
@@ -66,22 +60,15 @@ public class WebSocket {
     }
 
     /**
-     * 收到客户端消息后调用的方法
+     * 收到客户端消息后调用
      *
-     * @param message 客户端发送过来的消息
+     * @param message
+     * @param session
      */
     @OnMessage
     public void onMessage(String message, Session session) {
-        message = "来自" + userId + "的消息:" + message;
-        log.info("onMessage:" + message);
-        // 群发消息
-        for (WebSocket item : webSocketSet) {
-            try {
-                item.sendMessage(message);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        log.info("onMessage " + userId + ": " + message);
+        WsUtil.onReceive(message);
     }
 
     /**
