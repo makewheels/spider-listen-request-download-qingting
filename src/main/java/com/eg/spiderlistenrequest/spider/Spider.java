@@ -93,7 +93,6 @@ public class Spider {
                 missionList.add(mission);
             }
         } while (CollectionUtils.isNotEmpty(missionList) && missionList.size() < total);
-
     }
 
     /**
@@ -169,8 +168,11 @@ public class Spider {
                 } else {
                     mission.setDownloadUrl(eachUrl);
                     //开始下载
-                    File file = new File(Constants.DOWNLOAD_LOCATION + File.separator + Constants.CHANNEL_TITLE,
-                            mission.getName() + "." + mission.getFormat());
+                    File folder = new File(Constants.DOWNLOAD_LOCATION + File.separator + Constants.CHANNEL_TITLE);
+                    if (folder.exists() == false) {
+                        folder.mkdirs();
+                    }
+                    File file = new File(folder, mission.getName() + "." + mission.getFormat());
                     try {
                         FileUtils.copyURLToFile(new URL(mission.getDownloadUrl()), file);
                     } catch (IOException e) {
