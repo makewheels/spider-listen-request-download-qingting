@@ -142,7 +142,8 @@ public class Spider {
         driver.navigate().refresh();
         listening = true;
         //点击播放按钮
-        WebElement playButton = driver.findElement(By.xpath("//*[@id=\"app\"]/div/div[2]/div[2]/div[1]/div[1]/div[2]/button[1]"));
+        WebElement playButton = driver.findElement(By.xpath(
+                "//*[@id=\"app\"]/div/div[3]/div[2]/div[1]/div[1]/div[2]/button[1]"));
         playButton.click();
         playButton.click();
         playButton.click();
@@ -159,6 +160,7 @@ public class Spider {
             return;
         }
         String eachUrl = wsMessage.getMessage();
+        System.out.println(eachUrl);
 //        if (eachUrl.startsWith("https://audio.qingting.fm") == false) {
         if (eachUrl.startsWith("https://od.sign.qingting.fm/") == false) {
             return;
@@ -174,7 +176,8 @@ public class Spider {
                 } else {
                     mission.setDownloadUrl(eachUrl);
                     //开始下载
-                    File folder = new File(Constants.DOWNLOAD_LOCATION + File.separator + Constants.CHANNEL_TITLE);
+                    File folder = new File(Constants.DOWNLOAD_LOCATION
+                            + File.separator + Constants.CHANNEL_TITLE);
                     if (folder.exists() == false) {
                         folder.mkdirs();
                     }
